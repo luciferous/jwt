@@ -58,8 +58,9 @@ class JWTTest extends TestCase
             "message" => "abc",
             "exp" => time() - 20); // time in the past
         $encoded = JWT::encode($payload, 'my_key');
-        try { JWT::decode($encoded, 'my_key', array('HS256')); }
-        catch (\Exception $e) {
+        try {
+            JWT::decode($encoded, 'my_key', array('HS256'));
+        } catch (\Exception $e) {
             $exceptionPayload = (array)($e->getPayload());
             $this->assertEquals($exceptionPayload, $payload);
             throw $e;
@@ -116,8 +117,9 @@ class JWTTest extends TestCase
             "exp" => time() - 70); // time far in the past
         $this->setExpectedException('Firebase\JWT\ExpiredException');
         $encoded = JWT::encode($payload, 'my_key');
-        try { $decoded = JWT::decode($encoded, 'my_key', array('HS256')); }
-        catch (\Exception $e) {
+        try {
+            $decoded = JWT::decode($encoded, 'my_key', array('HS256'));
+        } catch (\Exception $e) {
             $exceptionPayload = (array)($e->getPayload());
             $this->assertEquals($exceptionPayload, $payload);
             throw $e;
@@ -204,8 +206,9 @@ class JWTTest extends TestCase
         $encoded = JWT::encode($payload, 'my_key');
         $this->setExpectedException('Firebase\JWT\SignatureInvalidException');
 
-        try { JWT::decode($encoded, 'my_key2', array('HS256')); }
-        catch (\Exception $e) {
+        try {
+            JWT::decode($encoded, 'my_key2', array('HS256'));
+        } catch (\Exception $e) {
             $exceptionPayload = (array)($e->getPayload());
             $this->assertEquals($exceptionPayload, $payload);
             throw $e;
