@@ -58,7 +58,12 @@ class JWTTest extends TestCase
             "message" => "abc",
             "exp" => time() - 20); // time in the past
         $encoded = JWT::encode($payload, 'my_key');
-        JWT::decode($encoded, 'my_key', array('HS256'));
+        try { JWT::decode($encoded, 'my_key', array('HS256')); }
+        catch (\Exception $e) {
+            $exceptionPayload = (array)($e->getPayload());
+            $this->assertEquals($exceptionPayload, $payload);
+            throw $e;
+        }
     }
 
     public function testBeforeValidTokenWithNbf()
@@ -111,7 +116,12 @@ class JWTTest extends TestCase
             "exp" => time() - 70); // time far in the past
         $this->setExpectedException('Firebase\JWT\ExpiredException');
         $encoded = JWT::encode($payload, 'my_key');
-        $decoded = JWT::decode($encoded, 'my_key', array('HS256'));
+        try { $decoded = JWT::decode($encoded, 'my_key', array('HS256')); }
+        catch (\Exception $e) {
+            $exceptionPayload = (array)($e->getPayload());
+            $this->assertEquals($exceptionPayload, $payload);
+            throw $e;
+        }
         $this->assertEquals($decoded->message, 'abc');
         JWT::$leeway = 0;
     }
@@ -193,7 +203,13 @@ class JWTTest extends TestCase
             "exp" => time() + 20); // time in the future
         $encoded = JWT::encode($payload, 'my_key');
         $this->setExpectedException('Firebase\JWT\SignatureInvalidException');
-        JWT::decode($encoded, 'my_key2', array('HS256'));
+
+        try { JWT::decode($encoded, 'my_key2', array('HS256')); }
+        catch (\Exception $e) {
+            $exceptionPayload = (array)($e->getPayload());
+            $this->assertEquals($exceptionPayload, $payload);
+            throw $e;
+        }
     }
 
     public function testNullKeyFails()
