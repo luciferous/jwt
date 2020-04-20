@@ -5,7 +5,7 @@ class ExpiredException extends \UnexpectedValueException implements IJWTExceptio
 {
     private $payload;
     
-    public function __construct($payload, string $message = NULL, int $code = 0, Throwable $previous = NULL)
+    public function __construct($payload, $message = "", $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->payload = $payload;
