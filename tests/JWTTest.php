@@ -293,7 +293,8 @@ class JWTTest extends TestCase
         );
 
         $jwt = JWT::encode('abc', $privateKey, 'RS256');
-        $pubKey = openssl_pkey_get_details($privateKey)['key'];
+        $keyDetails = openssl_pkey_get_details($privateKey);
+        $pubKey = $keyDetails['key'];
         $decoded = JWT::decode($jwt, $pubKey, array('RS256'));
         $this->assertEquals($decoded, 'abc');
     }
