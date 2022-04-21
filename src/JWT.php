@@ -66,7 +66,7 @@ class JWT
     ];
 
     /**
-     * Decodes a JWT string into a PHP object.
+     * Decodes the payload from a JWT string into a PHP object.
      *
      * @param string                 $jwt            The JWT
      * @param Key|array<string, Key> $keyOrKeyArray  The Key or associative array of key IDs (kid) to Key objects.
@@ -164,6 +164,49 @@ class JWT
         }
 
         return $payload;
+    }
+
+    /**
+     * Decodes the header from a JWT string into a PHP object.
+     *
+     * @param string                 $jwt            The JWT
+     * @param Key|array<string, Key> $keyOrKeyArray  The Key or associative array of key IDs (kid) to Key objects.
+     *                                               If the algorithm used is asymmetric, this is the public key
+     *                                               Each Key object contains an algorithm and matching key.
+     *                                               Supported algorithms are 'ES384','ES256', 'HS256', 'HS384',
+     *                                               'HS512', 'RS256', 'RS384', and 'RS512'
+     *
+     * @return stdClass The JWT's payload as a PHP object
+     *
+     * @throws UnexpectedValueException     Provided JWT was invalid
+     *
+     * @uses jsonDecode
+     * @uses urlsafeB64Decode
+     */
+    public static function decodeHeader(
+        string $jwt
+    ): stdClass {
+        // Validate JWT
+        $timestamp = \is_null(static::$timestamp) ? \time() : static::$timestamp;
+
+        $tks = \explode('.', $jwt);
+        if (\count($tks) != 3) {
+            throw new UnexpectedValueException('Wrong number of segments');
+        }
+        list($headb64, $bodyb64, $cryptob64) = $tks;
+        $headerRaw = static::urlsafeB64Decode($headb64);
+        if (null === ($header = static::jsonDecode($headerRaw))) {
+            throw new UnexpectedValueException('Invalid header encoding');
+        }
+        if (is_array($header)) {
+            // prevent PHP Fatal Error in edge-cases when payload is empty array
+            $header = (object) $header;
+        }
+        if (!$header instanceof stdClass) {
+            throw new UnexpectedValueException('Header must be a JSON object');
+        }
+
+        return $header;
     }
 
     /**
