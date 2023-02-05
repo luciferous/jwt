@@ -172,6 +172,66 @@ class CachedKeySetTest extends TestCase
         $this->assertSame('bar', $cachedKeySet['bar']->getAlgorithm());
     }
 
+    public function testKeyIdIsCachedFromPreviousFormat()
+    {
+        $cacheItem = $this->prophesize(CacheItemInterface::class);
+        $cacheItem->isHit()
+            ->willReturn(true);
+        $cacheItem->get()
+            ->willReturn($this->testJwks1);
+
+        $cache = $this->prophesize(CacheItemPoolInterface::class);
+        $cache->getItem($this->testJwksUriKey)
+            ->willReturn($cacheItem->reveal());
+        $cache->save(Argument::any())
+            ->willReturn(true);
+
+        $cachedKeySet = new CachedKeySet(
+            $this->testJwksUri,
+            $this->prophesize(ClientInterface::class)->reveal(),
+            $this->prophesize(RequestFactoryInterface::class)->reveal(),
+            $cache->reveal()
+        );
+        $this->assertInstanceOf(Key::class, $cachedKeySet['foo']);
+        $this->assertSame('foo', $cachedKeySet['foo']->getAlgorithm());
+    }
+
+    public function testCachedKeyIdRefreshFromPreviousFormat()
+    {
+        $cacheItem = $this->prophesize(CacheItemInterface::class);
+        $cacheItem->isHit()
+            ->shouldBeCalledOnce()
+            ->willReturn(true);
+        $cacheItem->get()
+            ->shouldBeCalledOnce()
+            ->willReturn($this->testJwks1);
+        $cacheItem->set(Argument::any())
+            ->shouldBeCalledOnce()
+            ->will(function () {
+                return $this;
+            });
+
+        $cache = $this->prophesize(CacheItemPoolInterface::class);
+        $cache->getItem($this->testJwksUriKey)
+            ->shouldBeCalledOnce()
+            ->willReturn($cacheItem->reveal());
+        $cache->save(Argument::any())
+            ->shouldBeCalledOnce()
+            ->willReturn(true);
+
+        $cachedKeySet = new CachedKeySet(
+            $this->testJwksUri,
+            $this->getMockHttpClient($this->testJwks2), // updated JWK
+            $this->getMockHttpFactory(),
+            $cache->reveal()
+        );
+        $this->assertInstanceOf(Key::class, $cachedKeySet['foo']);
+        $this->assertSame('foo', $cachedKeySet['foo']->getAlgorithm());
+
+        $this->assertInstanceOf(Key::class, $cachedKeySet['bar']);
+        $this->assertSame('bar', $cachedKeySet['bar']->getAlgorithm());
+    }
+
     public function testCacheItemWithExpiresAfter()
     {
         $expiresAfter = 10;

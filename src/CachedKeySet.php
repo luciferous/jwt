@@ -160,6 +160,11 @@ class CachedKeySet implements ArrayAccess
             if ($item->isHit()) {
                 // item found! retrieve it
                 $this->keySet = $item->get();
+                // If the cached key was a string, it cached the JWKS response body as a string.
+                // Parse this into expected format array<kid, jwk> instead.
+                if (is_string($this->keySet)) {
+                    $this->keySet = $this->formatJwksForCache($this->keySet);
+                }
             }
         }
 
