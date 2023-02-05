@@ -158,7 +158,7 @@ class CachedKeySet implements ArrayAccess
             $item = $this->getCacheItem();
             // Try to load keys from cache
             if ($item->isHit()) {
-                // item found! Return it
+                // item found! retrieve it
                 $this->keySet = $item->get();
             }
         }
