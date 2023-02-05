@@ -10,6 +10,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * @implements ArrayAccess<string, Key>
@@ -41,7 +42,7 @@ class CachedKeySet implements ArrayAccess
      */
     private $cacheItem;
     /**
-     * @var array<string, Key>
+     * @var array<string, array>
      */
     private $keySet;
     /**
@@ -101,7 +102,7 @@ class CachedKeySet implements ArrayAccess
         if (!$this->keyIdExists($keyId)) {
             throw new OutOfBoundsException('Key ID not found');
         }
-        return $this->keySet[$keyId];
+        return JWK::parseKey($this->keySet[$keyId], $this->defaultAlg);
     }
 
     /**
@@ -130,6 +131,27 @@ class CachedKeySet implements ArrayAccess
         throw new LogicException('Method not implemented');
     }
 
+    private function formatJwksForCache(string $jwks): array
+    {
+        $jwks = json_decode($jwks, true);
+
+        if (!isset($jwks['keys'])) {
+            throw new UnexpectedValueException('"keys" member must exist in the JWK Set');
+        }
+
+        if (empty($jwks['keys'])) {
+            throw new InvalidArgumentException('JWK Set did not contain any keys');
+        }
+
+        $keys = [];
+        foreach ($jwks['keys'] as $k => $v) {
+            $kid = isset($v['kid']) ? $v['kid'] : $k;
+            $keys[(string) $kid] = $v;
+        }
+
+        return $keys;
+    }
+
     private function keyIdExists(string $keyId): bool
     {
         if (null === $this->keySet) {
@@ -137,8 +159,7 @@ class CachedKeySet implements ArrayAccess
             // Try to load keys from cache
             if ($item->isHit()) {
                 // item found! Return it
-                $jwks = $item->get();
-                $this->keySet = JWK::parseKeySet(json_decode($jwks, true), $this->defaultAlg);
+                $this->keySet = $item->get();
             }
         }
 
@@ -148,15 +169,14 @@ class CachedKeySet implements ArrayAccess
             }
             $request = $this->httpFactory->createRequest('GET', $this->jwksUri);
             $jwksResponse = $this->httpClient->sendRequest($request);
-            $jwks = (string) $jwksResponse->getBody();
-            $this->keySet = JWK::parseKeySet(json_decode($jwks, true), $this->defaultAlg);
+            $this->keySet = $this->formatJwksForCache((string) $jwksResponse->getBody());
 
             if (!isset($this->keySet[$keyId])) {
                 return false;
             }
 
             $item = $this->getCacheItem();
-            $item->set($jwks);
+            $item->set($this->keySet);
             if ($this->expiresAfter) {
                 $item->expiresAfter($this->expiresAfter);
             }
