@@ -108,12 +108,46 @@ class JWTTest extends TestCase
         $this->expectException(ExpiredException::class);
         $payload = [
             'message' => 'abc',
-            'exp' => time() - 20, // time in the past
+            'exp' => time() - 100, // time in the past
         ];
         $encoded = JWT::encode($payload, 'my_key', 'HS256');
         try {
             JWT::decode($encoded, new Key('my_key', 'HS256'));
         } catch (ExpiredException $e) {
+            $exceptionPayload = (array) $e->getPayload();
+            $this->assertEquals($exceptionPayload, $payload);
+            throw $e;
+        }
+    }
+
+    public function testBeforeValidExceptionPayload()
+    {
+        $this->expectException(BeforeValidException::class);
+        $payload = [
+            'message' => 'abc',
+            'iat' => time() + 20, // time in the future
+        ];
+        $encoded = JWT::encode($payload, 'my_key', 'HS256');
+        try {
+            JWT::decode($encoded, new Key('my_key', 'HS256'));
+        } catch (BeforeValidException $e) {
+            $exceptionPayload = (array) $e->getPayload();
+            $this->assertEquals($exceptionPayload, $payload);
+            throw $e;
+        }
+    }
+
+    public function testSignatureInvalidExceptionPayload()
+    {
+        $payload = [
+            'message' => 'abc',
+            'exp' => time() + 20, // time in the future
+        ];
+        $encoded = JWT::encode($payload, 'my_key', 'HS256');
+        $this->expectException(SignatureInvalidException::class);
+        try {
+            JWT::decode($encoded, new Key('my_key2', 'HS256'));
+        } catch (SignatureInvalidException $e) {
             $exceptionPayload = (array) $e->getPayload();
             $this->assertEquals($exceptionPayload, $payload);
             throw $e;
