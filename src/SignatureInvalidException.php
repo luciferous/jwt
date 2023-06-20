@@ -1,17 +1,17 @@
 <?php
+
 namespace Firebase\JWT;
 
-class SignatureInvalidException extends \UnexpectedValueException
+class SignatureInvalidException extends \UnexpectedValueException implements JwtExceptionInterface
 {
     private $payload;
-    
-    public function __construct($payload, $message = "", $code = 0, $previous = null)
+
+    public function setPayload(object $payload): void
     {
-        parent::__construct($message, $code, $previous);
         $this->payload = $payload;
     }
 
-    public function getPayload()
+    public function getPayload(): object
     {
         return $this->payload;
     }
