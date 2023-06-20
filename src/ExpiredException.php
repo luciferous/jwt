@@ -1,10 +1,10 @@
 <?php
 namespace Firebase\JWT;
 
-class ExpiredException extends \UnexpectedValueException implements IJWTException
+class ExpiredException extends \UnexpectedValueException implements JWTExceptionInterface
 {
     private $payload;
-    
+
     public function __construct($payload, $message = "", $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);

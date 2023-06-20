@@ -1,7 +1,7 @@
 <?php
 namespace Firebase\JWT;
 
-interface IJWTException
+interface JWTExceptionInterface
 {
     /**
      * Get the payload that caused this exception.

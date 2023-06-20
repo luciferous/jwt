@@ -60,7 +60,7 @@ class JWTTest extends TestCase
         $encoded = JWT::encode($payload, 'my_key');
         try {
             JWT::decode($encoded, 'my_key', array('HS256'));
-        } catch (\Exception $e) {
+        } catch (ExpiredException $e) {
             $exceptionPayload = (array)($e->getPayload());
             $this->assertEquals($exceptionPayload, $payload);
             throw $e;
